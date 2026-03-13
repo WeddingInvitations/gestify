@@ -23,21 +23,34 @@ gcloud services enable cloudbuild.googleapis.com
 ```
 
 ### 2. Desplegar a Cloud Run
+
+**Opción A: Script automatizado (Recomendado)**
+```powershell
+# Windows PowerShell
+.\deploy.ps1 [TU_PROJECT_ID] [REGION]
+
+# Bash/Linux
+./deploy.sh [TU_PROJECT_ID] [REGION]
+```
+
+**Opción B: Comando directo**
 ```bash
-# Opción 1: Despliegue directo desde código fuente
 gcloud run deploy gestify \
   --source . \
   --platform managed \
   --region us-central1 \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --port 8080 \
+  --memory 512Mi \
+  --cpu 1 \
+  --set-env-vars NODE_ENV=production
+```
 
-# Opción 2: Construir y desplegar con Docker
-gcloud builds submit --tag gcr.io/[PROJECT_ID]/gestify
-gcloud run deploy gestify \
-  --image gcr.io/[PROJECT_ID]/gestify \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
+**Opción C: Con Docker (si falla la build)**
+```bash
+# Usar Dockerfile simplificado
+cp Dockerfile.simple Dockerfile
+gcloud run deploy gestify --source . --region us-central1
 ```
 
 ### 3. Probar la aplicación
@@ -85,3 +98,35 @@ La aplicación usa las siguientes variables de entorno:
 3. Configura una base de datos si es necesario
 4. Implementa autenticación si es requerida
 5. Añade tests y CI/CD
+
+## 🔧 Troubleshooting
+
+### Error: "build step 0 failed: step exited with non-zero status: 1"
+**Solución:**
+1. Usar el Dockerfile simplificado:
+   ```bash
+   cp Dockerfile.simple Dockerfile
+   ```
+2. O desplegar sin Docker:
+   ```bash
+   gcloud run deploy gestify --source . --region us-central1
+   ```
+
+### Error: "Permission denied" o problemas de usuario
+El Dockerfile incluye configuración de seguridad. Si hay problemas, usa `Dockerfile.simple`.
+
+### Error: APIs no habilitadas
+```bash
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com
+```
+
+### Verificar logs del despliegue
+```bash
+gcloud run services logs tail gestify --region us-central1
+```
+
+### Cambiar región si hay errores
+Prueba diferentes regiones:
+- `us-central1` (predeterminado)
+- `europe-west1`
+- `asia-southeast1`
