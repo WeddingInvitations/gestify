@@ -9,4 +9,7 @@ README.md
 coverage
 .coverage
 .Dockerfile.swp
-.dockerignore
+Dockerfile.simple
+*.md
+.vscode
+.idea
