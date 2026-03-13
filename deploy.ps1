@@ -19,9 +19,8 @@ Write-Host "📍 Servicio: $ServiceName" -ForegroundColor Cyan
 Write-Host ""
 
 # Verificar que gcloud está instalado
-try {
-    $null = Get-Command gcloud -ErrorAction Stop
-} catch {
+$gcloudExists = Get-Command "gcloud" -ErrorAction SilentlyContinue
+if (-not $gcloudExists) {
     Write-Host "❌ Error: Google Cloud CLI no está instalado" -ForegroundColor Red
     Write-Host "📥 Instala desde: https://cloud.google.com/sdk/docs/install" -ForegroundColor Yellow
     exit 1
@@ -29,37 +28,35 @@ try {
 
 # Configurar proyecto
 Write-Host "🔧 Configurando proyecto..." -ForegroundColor Yellow
-gcloud config set project $ProjectId
+& gcloud config set project $ProjectId
 
 # Habilitar APIs necesarias
 Write-Host "🔌 Habilitando APIs necesarias..." -ForegroundColor Yellow
-gcloud services enable run.googleapis.com
-gcloud services enable cloudbuild.googleapis.com
+& gcloud services enable run.googleapis.com
+& gcloud services enable cloudbuild.googleapis.com
 
 # Desplegar usando source
 Write-Host "📦 Desplegando desde código fuente..." -ForegroundColor Yellow
-gcloud run deploy $ServiceName `
-  --source . `
-  --platform managed `
-  --region $Region `
-  --allow-unauthenticated `
-  --port 8080 `
-  --memory 512Mi `
-  --cpu 1 `
-  --max-instances 10 `
-  --set-env-vars NODE_ENV=production
+& gcloud run deploy $ServiceName --source . --platform managed --region $Region --allow-unauthenticated --port 8080 --memory 512Mi --cpu 1 --max-instances 10 --set-env-vars NODE_ENV=production
 
-# Obtener la URL del servicio
-$ServiceUrl = gcloud run services describe $ServiceName --platform managed --region $Region --format 'value(status.url)'
-
-Write-Host ""
-Write-Host "✅ ¡Despliegue completado exitosamente!" -ForegroundColor Green
-Write-Host "🌐 URL del servicio: $ServiceUrl" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "🧪 Prueba los endpoints:" -ForegroundColor Yellow
-Write-Host "   • Inicio: $ServiceUrl"
-Write-Host "   • Salud: $ServiceUrl/health"
-Write-Host "   • API: $ServiceUrl/api/test"
-Write-Host ""
-Write-Host "📊 Monitorear logs:" -ForegroundColor Yellow
-Write-Host "   gcloud run services logs tail $ServiceName --region $Region"
+if ($LASTEXITCODE -eq 0) {
+    # Obtener la URL del servicio
+    $ServiceUrl = & gcloud run services describe $ServiceName --platform managed --region $Region --format 'value(status.url)'
+    
+    Write-Host ""
+    Write-Host "✅ ¡Despliegue completado exitosamente!" -ForegroundColor Green
+    Write-Host "🌐 URL del servicio: $ServiceUrl" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "🧪 Prueba los endpoints:" -ForegroundColor Yellow
+    Write-Host "   • Inicio: $ServiceUrl"
+    Write-Host "   • Salud: $ServiceUrl/health"
+    Write-Host "   • API: $ServiceUrl/api/test"
+    Write-Host ""
+    Write-Host "📊 Monitorear logs:" -ForegroundColor Yellow
+    Write-Host "   gcloud run services logs tail $ServiceName --region $Region"
+} else {
+    Write-Host "❌ Error en el despliegue. Código de salida: $LASTEXITCODE" -ForegroundColor Red
+    Write-Host "💡 Prueba usar el Dockerfile simple:" -ForegroundColor Yellow
+    Write-Host "   Copy-Item Dockerfile.simple Dockerfile -Force" -ForegroundColor Cyan
+    Write-Host "   gcloud run deploy gestify --source . --region $Region" -ForegroundColor Cyan
+}
