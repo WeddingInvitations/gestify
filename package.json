@@ -1,0 +1,24 @@
+{
+  "name": "gestify",
+  "version": "1.0.0",
+  "description": "Gestify - Aplicación para Google Cloud Run",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "gestify",
+    "cloud-run",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
