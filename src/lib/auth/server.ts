@@ -1,5 +1,5 @@
 import { DecodedIdToken } from 'firebase-admin/auth'
-import { adminAuth, adminDb } from '@/lib/firebase/admin'
+import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin'
 import { User, UserRole } from '@/types'
 import { cookies } from 'next/headers'
 
@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
  */
 export const verifyAuthToken = async (token: string): Promise<DecodedIdToken | null> => {
   try {
+    const adminAuth = getAdminAuth()
     const decodedToken = await adminAuth.verifyIdToken(token)
     return decodedToken
   } catch (error) {
@@ -43,6 +44,7 @@ export const getServerUser = async (): Promise<User | null> => {
     if (!decodedToken) return null
     
     // Obtener datos del usuario desde Firestore
+    const adminDb = getAdminDb()
     const userDoc = await adminDb.doc(`users/${decodedToken.uid}`).get()
     
     if (!userDoc.exists) return null

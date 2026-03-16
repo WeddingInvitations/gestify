@@ -36,6 +36,11 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Variables de entorno de Firebase (con valores de ejemplo - configurar en Cloud Run)
+ENV FIREBASE_PROJECT_ID="gestify-490112"
+ENV FIREBASE_PRIVATE_KEY=""
+ENV FIREBASE_CLIENT_EMAIL=""
+
 # Crear usuario no-root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

@@ -17,7 +17,7 @@ import {
   Firestore,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { adminDb } from '@/lib/firebase/admin'
+import { getAdminDb } from '@/lib/firebase/admin'
 import { BaseEntity, WithoutId, WithoutTimestamps } from '@/types'
 
 export interface QueryOptions {

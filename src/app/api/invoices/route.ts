@@ -3,6 +3,9 @@ import { InvoiceRepository } from '@/lib/repositories'
 import { createInvoiceSchema } from '@/lib/validations'
 import { getServerUser } from '@/lib/auth/server'
 
+// Force dynamic rendering - no build-time execution
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getServerUser()
