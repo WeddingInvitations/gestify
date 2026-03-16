@@ -1,32 +1,52 @@
-# Usar imagen oficial de Node.js
-FROM node:18-alpine
+# Multi-stage build para Next.js
+FROM node:18-alpine AS base
 
-# Crear directorio de trabajo
+# Instalar dependencias solo cuando sea necesario
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copiar archivos de dependencias
-COPY package*.json ./
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-# Instalar dependencias (comando actualizado)
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Copiar código fuente
+# Build de la aplicación
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Crear usuario no-root para seguridad (Alpine Linux compatible)
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup && \
-    chown -R appuser:appgroup /app
+# Variables de entorno para build
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Cambiar a usuario no-root
-USER appuser
+# Build Next.js
+RUN npm run build
 
-# Exponer puerto
+# Imagen de producción
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# Crear usuario no-root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copiar archivos necesarios
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
 EXPOSE 8080
+
+ENV PORT 8080
+ENV HOSTNAME "0.0.0.0"
 
 # Health check para Cloud Run
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
 
-# Comando por defecto
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

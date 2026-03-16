@@ -1,23 +1,50 @@
 {
   "name": "gestify",
   "version": "1.0.0",
-  "description": "Gestify - Aplicación para Google Cloud Run",
-  "main": "index.js",
+  "description": "Gestify - SaaS multi-tenant para PyMEs",
+  "private": true,
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "firebase": "^10.7.0",
+    "firebase-admin": "^12.0.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "@tailwindcss/forms": "^0.5.0",
+    "zod": "^3.22.0",
+    "react-hook-form": "^7.48.0",
+    "@hookform/resolvers": "^3.3.0",
+    "lucide-react": "^0.292.0",
+    "clsx": "^2.0.0",
+    "class-variance-authority": "^0.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "gestify",
-    "cloud-run",
-    "express"
+    "saas",
+    "multi-tenant",
+    "nextjs",
+    "firebase",
+    "pymes"
   ],
   "author": "",
   "license": "MIT"

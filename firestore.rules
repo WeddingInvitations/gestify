@@ -1,0 +1,206 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================================================
+    // HELPER FUNCTIONS
+    // ========================================================================
+    
+    // Verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Obtener el tenantId del usuario desde el documento users/{uid}
+    function getUserTenantId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId;
+    }
+    
+    // Verificar si el usuario pertenece al tenant del documento
+    function belongsToTenant(tenantId) {
+      return isAuthenticated() && getUserTenantId() == tenantId;
+    }
+    
+    // Obtener el rol del usuario
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Verificar si el usuario tiene el rol mínimo requerido
+    function hasRole(role) {
+      let userRole = getUserRole();
+      let roleHierarchy = {
+        'employee': 1,
+        'manager': 2,
+        'admin': 3,
+        'owner': 4
+      };
+      return roleHierarchy[userRole] >= roleHierarchy[role];
+    }
+    
+    // Verificar si es el propietario del documento (para empleados)
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // ========================================================================
+    // USERS COLLECTION
+    // ========================================================================
+    
+    match /users/{userId} {
+      // Los usuarios pueden leer y actualizar sus propios datos
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Solo admins y owners pueden crear y eliminar usuarios  
+      allow create, delete: if isAuthenticated() && hasRole('admin');
+      
+      // Los managers pueden leer usuarios de su tenant
+      allow read: if isAuthenticated() && hasRole('manager') && 
+                     resource.data.tenantId == getUserTenantId();
+    }
+    
+    // ========================================================================
+    // COMPANIES COLLECTION
+    // ========================================================================
+    
+    match /companies/{tenantId} {
+      // Solo miembros del tenant pueden leer la empresa
+      allow read: if belongsToTenant(tenantId);
+      
+      // Solo owners y admins pueden modificar datos de la empresa
+      allow update: if belongsToTenant(tenantId) && hasRole('admin');
+      
+      // Solo owners pueden crear y eliminar empresas
+      allow create, delete: if isAuthenticated() && hasRole('owner');
+      
+      // ======================================================================
+      // EMPLOYEES SUBCOLLECTION
+      // ======================================================================
+      
+      match /employees/{employeeId} {
+        // Todos los usuarios autenticados del tenant pueden leer empleados
+        allow read: if belongsToTenant(tenantId);
+        
+        // Managers y superiores pueden crear, actualizar y eliminar empleados
+        allow create, update, delete: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Los empleados pueden actualizar algunos de sus propios datos
+        allow update: if belongsToTenant(tenantId) && 
+                         resource.data.userId == request.auth.uid &&
+                         // Solo permitir cambios en campos específicos
+                         request.writeFields.hasOnly(['phone', 'updatedAt']);
+      }
+      
+      // ======================================================================
+      // INVOICES SUBCOLLECTION  
+      // ======================================================================
+      
+      match /invoices/{invoiceId} {
+        // Managers y superiores pueden gestionar facturas
+        allow read, create, update: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Solo admins pueden eliminar facturas
+        allow delete: if belongsToTenant(tenantId) && hasRole('admin');
+      }
+      
+      // ======================================================================
+      // EXPENSES SUBCOLLECTION
+      // ======================================================================
+      
+      match /expenses/{expenseId} {
+        // Todos pueden leer gastos de su tenant
+        allow read: if belongsToTenant(tenantId);
+        
+        // Empleados pueden crear gastos propios
+        allow create: if belongsToTenant(tenantId) && 
+                         request.resource.data.employeeId == request.auth.uid;
+        
+        // Managers pueden gestionar todos los gastos
+        allow create, update, delete: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Empleados pueden actualizar sus propios gastos en estado draft
+        allow update: if belongsToTenant(tenantId) && 
+                         resource.data.employeeId == request.auth.uid &&
+                         resource.data.status == 'draft';
+      }
+      
+      // ======================================================================
+      // SHIFTS SUBCOLLECTION
+      // ======================================================================
+      
+      match /shifts/{shiftId} {
+        // Todos pueden leer turnos de su tenant
+        allow read: if belongsToTenant(tenantId);
+        
+        // Managers pueden gestionar todos los turnos
+        allow create, update, delete: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Empleados pueden ver sus propios turnos
+        allow read: if belongsToTenant(tenantId) && 
+                       resource.data.employeeId == request.auth.uid;
+      }
+      
+      // ======================================================================
+      // VACATIONS SUBCOLLECTION
+      // ======================================================================
+      
+      match /vacations/{vacationId} {
+        // Managers pueden gestionar todas las vacaciones
+        allow read, create, update, delete: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Empleados pueden crear solicitudes propias
+        allow create: if belongsToTenant(tenantId) && 
+                         request.resource.data.employeeId == request.auth.uid;
+        
+        // Empleados pueden leer y actualizar sus propias solicitudes
+        allow read, update: if belongsToTenant(tenantId) && 
+                              resource.data.employeeId == request.auth.uid;
+      }
+      
+      // ======================================================================
+      // ATTENDANCES SUBCOLLECTION  
+      // ======================================================================
+      
+      match /attendances/{attendanceId} {
+        // Managers pueden ver todos los fichajes
+        allow read: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Empleados pueden crear y leer sus propios fichajes
+        allow create, read: if belongsToTenant(tenantId) && 
+                              resource.data.employeeId == request.auth.uid;
+        
+        // Empleados pueden actualizar fichajes del día actual
+        allow update: if belongsToTenant(tenantId) && 
+                         resource.data.employeeId == request.auth.uid &&
+                         resource.data.date == request.time.toMillis();
+        
+        // Managers pueden gestionar todos los fichajes
+        allow create, update, delete: if belongsToTenant(tenantId) && hasRole('manager');
+      }
+      
+      // ======================================================================
+      // SUMMARIES SUBCOLLECTION
+      // ======================================================================
+      
+      match /summaries/{summaryId} {
+        // Solo managers y superiores pueden leer resúmenes
+        allow read: if belongsToTenant(tenantId) && hasRole('manager');
+        
+        // Solo el sistema puede crear/actualizar resúmenes (via Admin SDK)
+        allow create, update: if false; // Solo via servidor
+        
+        // Solo admins pueden eliminar resúmenes
+        allow delete: if belongsToTenant(tenantId) && hasRole('admin');
+      }
+    }
+    
+    // ========================================================================
+    // DENY ALL OTHER OPERATIONS
+    // ========================================================================
+    
+    // Denegar acceso a cualquier otra colección o documento
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
