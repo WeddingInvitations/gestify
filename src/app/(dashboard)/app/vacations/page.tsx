@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth/context'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 interface Vacation {
   id: string
   employeeId: string

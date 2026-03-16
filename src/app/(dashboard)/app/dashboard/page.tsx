@@ -3,6 +3,9 @@
 import { useAuth } from '@/lib/auth/context'
 import { useState, useEffect } from 'react'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 interface DashboardMetrics {
   employees: number
   invoices: {
