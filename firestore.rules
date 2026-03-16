@@ -13,7 +13,8 @@ service cloud.firestore {
     
     // Obtener el tenantId del usuario desde el documento users/{uid}
     function getUserTenantId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ?
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId : null;
     }
     
     // Verificar si el usuario pertenece al tenant del documento
@@ -23,19 +24,18 @@ service cloud.firestore {
     
     // Obtener el rol del usuario
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ?
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
     }
     
     // Verificar si el usuario tiene el rol mínimo requerido
     function hasRole(role) {
       let userRole = getUserRole();
-      let roleHierarchy = {
-        'employee': 1,
-        'manager': 2,
-        'admin': 3,
-        'owner': 4
-      };
-      return roleHierarchy[userRole] >= roleHierarchy[role];
+      return userRole != null && 
+             ((userRole == 'employee' && (role == 'employee')) ||
+              (userRole == 'manager' && (role == 'employee' || role == 'manager')) ||
+              (userRole == 'admin' && (role == 'employee' || role == 'manager' || role == 'admin')) ||
+              (userRole == 'owner'));
     }
     
     // Verificar si es el propietario del documento (para empleados)
@@ -51,10 +51,13 @@ service cloud.firestore {
       // Los usuarios pueden leer y actualizar sus propios datos
       allow read, update: if isAuthenticated() && request.auth.uid == userId;
       
-      // Solo admins y owners pueden crear y eliminar usuarios  
+      // Los usuarios pueden crear su propio documento inicial (auto-registration)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Solo admins y owners pueden crear usuarios para otros y eliminar usuarios  
       allow create, delete: if isAuthenticated() && hasRole('admin');
       
-      // Los managers pueden leer usuarios de su tenant
+      // Los managers pueden leer usuarios de su tenant (solo si existe getUserTenantId)
       allow read: if isAuthenticated() && hasRole('manager') && 
                      resource.data.tenantId == getUserTenantId();
     }
@@ -64,13 +67,19 @@ service cloud.firestore {
     // ========================================================================
     
     match /companies/{tenantId} {
-      // Solo miembros del tenant pueden leer la empresa
+      // Solo miembros del tenant pueden leer la empresa  
       allow read: if belongsToTenant(tenantId);
+      
+      // Permitir leer la empresa demo a usuarios autenticados (para auto-setup)
+      allow read: if isAuthenticated() && tenantId == 'demo';
+      
+      // Permitir crear la empresa demo automáticamente
+      allow create: if isAuthenticated() && tenantId == 'demo';
       
       // Solo owners y admins pueden modificar datos de la empresa
       allow update: if belongsToTenant(tenantId) && hasRole('admin');
       
-      // Solo owners pueden crear y eliminar empresas
+      // Solo owners pueden crear y eliminar empresas (excepto demo)
       allow create, delete: if isAuthenticated() && hasRole('owner');
       
       // ======================================================================

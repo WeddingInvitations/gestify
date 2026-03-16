@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser
 } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase/config'
 import { User, Company } from '@/types'
 
@@ -27,11 +27,10 @@ export const signOut = async (): Promise<void> => {
 
 /**
  * Obtener los datos del usuario desde Firestore
+ * Si no existe, crea un documento básico para el usuario
  */
 export const getUserData = async (uid: string): Promise<User | null> => {
   try {
-    // Buscar en todas las compañías (necesario para multi-tenant)
-    // En producción, este enfoque debería optimizarse
     const userRef = doc(db, 'users', uid)
     const userSnap = await getDoc(userRef)
     
@@ -50,9 +49,42 @@ export const getUserData = async (uid: string): Promise<User | null> => {
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       }
+    } else {
+      // Usuario no existe: crear documento básico
+      // Necesitaremos configurar el tenantId y role después
+      const firebaseUser = auth.currentUser
+      if (!firebaseUser) return null
+      
+      const newUserData = {
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName || null,
+        photoURL: firebaseUser.photoURL || null,
+        role: 'employee', // Rol por defecto - debería configurarse después
+        isActive: true,
+        tenantId: 'demo', // Tenant por defecto - debería configurarse después
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+      }
+      
+      // Crear el documento 
+      await setDoc(userRef, newUserData)
+      
+      // Retornar los datos del usuario creado
+      return {
+        id: uid,
+        uid,
+        email: firebaseUser.email || '',
+        displayName: firebaseUser.displayName || null,
+        photoURL: firebaseUser.photoURL || null,
+        role: 'employee',
+        isActive: true,
+        lastLogin: new Date(),
+        tenantId: 'demo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
     }
-    
-    return null
   } catch (error) {
     console.error('Error getting user data:', error)
     return null
@@ -61,6 +93,7 @@ export const getUserData = async (uid: string): Promise<User | null> => {
 
 /**
  * Obtener los datos de la compañía
+ * Para tenantId 'demo', crea automáticamente una empresa demo si no existe
  */
 export const getCompanyData = async (tenantId: string): Promise<Company | null> => {
   try {
@@ -88,6 +121,53 @@ export const getCompanyData = async (tenantId: string): Promise<Company | null> 
         ownerId: data.ownerId,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
+      }
+    } else if (tenantId === 'demo') {
+      // Para el tenant demo, crear automáticamente una empresa demo
+      const currentUser = auth.currentUser
+      if (!currentUser) return null
+      
+      const demoCompanyData = {
+        name: 'Empresa Demo',
+        address: 'Calle Principal 123, Madrid, España',
+        phone: '+34 912 345 678',
+        email: 'contacto@empresademo.com',
+        taxId: 'B12345678',
+        logo: '',
+        settings: {
+          currency: 'EUR',
+          timezone: 'Europe/Madrid',
+          language: 'es',
+          dateFormat: 'DD/MM/YYYY',
+          fiscalYearStart: 1,
+        },
+        ownerId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }
+      
+      // Crear el documento de la empresa demo
+      await setDoc(companyRef, demoCompanyData)
+      
+      return {
+        id: tenantId,
+        tenantId,
+        name: 'Empresa Demo',
+        address: 'Calle Principal 123, Madrid, España',
+        phone: '+34 912 345 678',
+        email: 'contacto@empresademo.com',
+        taxId: 'B12345678',
+        logo: '',
+        settings: {
+          currency: 'EUR',
+          timezone: 'Europe/Madrid',
+          language: 'es',
+          dateFormat: 'DD/MM/YYYY',
+          fiscalYearStart: 1,
+        },
+        ownerId: currentUser.uid,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
     }
     
