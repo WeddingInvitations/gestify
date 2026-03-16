@@ -3,29 +3,13 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBJHpAYb-P832eAQPvJL8xp3p4pHZsIEAo",
-  authDomain: "gestify-490112.firebaseapp.com",
-  projectId: "gestify-490112",
-  storageBucket: "gestify-490112.firebasestorage.app",
-  messagingSenderId: "925707353742",
-  appId: "1:925707353742:web:c1ba6236393f29a1d793df",
-  measurementId: "G-19DT9BH3EW"
-}
-
-// Verificar que todas las variables requeridas estén presentes
-const requiredEnvVars = [
-  'NEXT_PUBLIC_FIREBASE_API_KEY',
-  'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-  'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-  'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-  'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-  'NEXT_PUBLIC_FIREBASE_APP_ID',
-]
-
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`)
-  }
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyBJHpAYb-P832eAQPvJL8xp3p4pHZsIEAo",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "gestify-490112.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "gestify-490112",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "gestify-490112.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "925707353742",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:925707353742:web:c1ba6236393f29a1d793df",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-19DT9BH3EW"
 }
 
 // Initialize Firebase
