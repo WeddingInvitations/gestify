@@ -3,12 +3,13 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyBJHpAYb-P832eAQPvJL8xp3p4pHZsIEAo",
+  authDomain: "gestify-490112.firebaseapp.com",
+  projectId: "gestify-490112",
+  storageBucket: "gestify-490112.firebasestorage.app",
+  messagingSenderId: "925707353742",
+  appId: "1:925707353742:web:c1ba6236393f29a1d793df",
+  measurementId: "G-19DT9BH3EW"
 }
 
 // Verificar que todas las variables requeridas estén presentes
