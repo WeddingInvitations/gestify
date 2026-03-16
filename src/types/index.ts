@@ -304,6 +304,7 @@ export interface AuthContextType {
   company: Company | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
+  signInGoogle: () => Promise<void>
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
 }

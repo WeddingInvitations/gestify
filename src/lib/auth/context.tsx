@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User as FirebaseUser } from 'firebase/auth'
 import { 
   signInWithEmail, 
+  signInWithGoogle,
   signOut as authSignOut, 
   onAuthChange, 
   getUserData, 
@@ -68,6 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInGoogle = async () => {
+    try {
+      setLoading(true)
+      await signInWithGoogle()
+      // El listener de onAuthChange se encargará de actualizar el estado
+    } catch (error) {
+      setLoading(false)
+      throw error
+    }
+  }
+
   const signOut = async () => {
     try {
       await authSignOut()
@@ -95,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     company, 
     loading,
     signIn,
+    signInGoogle,
     signOut,
     refreshUser,
   }

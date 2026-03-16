@@ -2,6 +2,8 @@
 
 import { 
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as authSignOut,
   onAuthStateChanged,
   User as FirebaseUser
@@ -15,6 +17,18 @@ import { User, Company } from '@/types'
  */
 export const signInWithEmail = async (email: string, password: string): Promise<FirebaseUser> => {
   const result = await signInWithEmailAndPassword(auth, email, password)
+  return result.user
+}
+
+/**
+ * Iniciar sesión con Google
+ */
+export const signInWithGoogle = async (): Promise<FirebaseUser> => {
+  const provider = new GoogleAuthProvider()
+  provider.addScope('email')
+  provider.addScope('profile')
+  
+  const result = await signInWithPopup(auth, provider)
   return result.user
 }
 
