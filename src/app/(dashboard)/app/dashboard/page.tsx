@@ -15,6 +15,7 @@ interface DashboardMetrics {
   }
   revenue: number
   expenses: number
+  balance: number
 }
 
 export default function DashboardPage() {
@@ -23,7 +24,8 @@ export default function DashboardPage() {
     employees: 0,
     invoices: { total: 0, pending: 0, overdue: 0 },
     revenue: 0,
-    expenses: 0
+    expenses: 0,
+    balance: 0
   })
 
   // Mock data para desarrollo
@@ -31,11 +33,14 @@ export default function DashboardPage() {
     if (!loading && user) {
       // Simular carga de datos
       setTimeout(() => {
+        const revenue = 15650.00
+        const expenses = 4320.50
         setMetrics({
           employees: 12,
           invoices: { total: 45, pending: 8, overdue: 2 },
-          revenue: 15650.00,
-          expenses: 4320.50
+          revenue: revenue,
+          expenses: expenses,
+          balance: revenue - expenses
         })
       }, 500)
     }
@@ -61,7 +66,24 @@ export default function DashboardPage() {
       </div>
 
       {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {/* Balance Económico - Destacado */}
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white md:col-span-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm font-medium">Balance Económico</p>
+              <p className="text-4xl font-bold mt-2">€{metrics.balance.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+              <p className="text-blue-100 text-xs mt-3">
+                {metrics.balance > 0 ? '📈 Ganancia' : '📉 Pérdida'}
+              </p>
+            </div>
+            <div className="text-6xl opacity-20">
+              💰
+            </div>
+          </div>
+        </div>
+
+        {/* Empleados */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -71,11 +93,12 @@ export default function DashboardPage() {
             </div>
             <div className="ml-4">
               <p className="text-2xl font-bold text-gray-900">{metrics.employees}</p>
-              <p className="text-gray-600">Empleados</p>
+              <p className="text-gray-600 text-sm">Empleados</p>
             </div>
           </div>
         </div>
 
+        {/* Ingresos */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100 text-green-600">
@@ -84,12 +107,13 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-bold text-gray-900">€{metrics.revenue.toLocaleString()}</p>
-              <p className="text-gray-600">Ingresos</p>
+              <p className="text-2xl font-bold text-gray-900">€{metrics.revenue.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+              <p className="text-gray-600 text-sm">Ingresos</p>
             </div>
           </div>
         </div>
 
+        {/* Gastos */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-red-100 text-red-600">
@@ -98,89 +122,118 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-2xl font-bold text-gray-900">€{metrics.expenses.toLocaleString()}</p>
-              <p className="text-gray-600">Gastos</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-2xl font-bold text-gray-900">{metrics.invoices.total}</p>
-              <p className="text-gray-600">Facturas</p>
+              <p className="text-2xl font-bold text-gray-900">€{metrics.expenses.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+              <p className="text-gray-600 text-sm">Gastos</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Alertas y notificaciones */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Resumen Visual */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Ingresos vs Gastos */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Facturas Pendientes</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Flujo económico</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Ingresos</span>
+                <span className="text-sm font-bold text-green-600">€{metrics.revenue.toLocaleString('es-ES', {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{width: '100%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-gray-700">Gastos</span>
+                <span className="text-sm font-bold text-red-600">€{metrics.expenses.toLocaleString('es-ES', {minimumFractionDigits: 2})}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-red-500 h-2 rounded-full" style={{width: `${(metrics.expenses / metrics.revenue) * 100}%`}}></div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Margen neto</span>
+              <span className={`text-sm font-bold ${metrics.balance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {((metrics.balance / metrics.revenue) * 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Facturas Pendientes */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Estado de facturas</h3>
           <div className="space-y-3">
             {metrics.invoices.pending > 0 ? (
               <>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-sm text-gray-900">{metrics.invoices.pending} facturas pendientes de pago</span>
-                  <span className="text-sm font-medium text-yellow-600">Pendiente</span>
+                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{metrics.invoices.pending} pendientes</p>
+                    <p className="text-xs text-gray-500">Esperando pago</p>
+                  </div>
+                  <span className="text-2xl">⏳</span>
                 </div>
                 {metrics.invoices.overdue > 0 && (
-                  <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                    <span className="text-sm text-gray-900">{metrics.invoices.overdue} facturas vencidas</span>
-                    <span className="text-sm font-medium text-red-600">Vencido</span>
+                  <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{metrics.invoices.overdue} vencidas</p>
+                      <p className="text-xs text-gray-500">Requière acción</p>
+                    </div>
+                    <span className="text-2xl">⚠️</span>
                   </div>
                 )}
               </>
             ) : (
-              <p className="text-gray-500 text-sm">No hay facturas pendientes</p>
+              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Todo pagado</p>
+                  <p className="text-xs text-gray-500">¡Excelente estado!</p>
+                </div>
+                <span className="text-2xl">✅</span>
+              </div>
             )}
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Total: {metrics.invoices.total} facturas
+            </p>
           </div>
         </div>
 
+        {/* Acciones Rápidas */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones Rápidas</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones rápidas</h3>
           <div className="space-y-2">
             <a
               href="/app/employees"
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-lg transition-colors border-l-2 border-transparent hover:border-blue-500"
             >
-              → Ver empleados
+              👥 Gestionar empleados
             </a>
             <a
               href="/app/invoices"
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 rounded-lg transition-colors border-l-2 border-transparent hover:border-green-500"
             >
-              → Gestionar facturas
+              📄 Facturas y pagos
             </a>
             <a
               href="/app/expenses"
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 rounded-lg transition-colors border-l-2 border-transparent hover:border-red-500"
             >
-              → Registrar gastos
+              💳 Registrar gastos
             </a>
             <a
               href="/app/attendances"
-              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 rounded-lg transition-colors border-l-2 border-transparent hover:border-purple-500"
             >
-              → Control de fichajes
+              ⏰ Fichajes empleados
             </a>
           </div>
         </div>
       </div>
 
-      {/* Gráfico placeholder */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen Mensual</h3>
-        <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Gráficos próximamente</p>
-        </div>
-      </div>
     </div>
   )
 }

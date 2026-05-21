@@ -20,42 +20,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+
     const unsubscribe = onAuthChange(async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        try {
+      try {
+        if (firebaseUser) {
           // Obtener datos completos del usuario
           const userData = await getUserData(firebaseUser.uid)
           
-          if (userData) {
-            setUser(userData)
-            
-            // Obtener datos de la empresa
-            const companyData = await getCompanyData(userData.tenantId)
-            setCompany(companyData)
-            
-            // Guardar token en cookie para middleware
+          if (isMounted) {
+            if (userData) {
+              setUser(userData)
+              
+              // Obtener datos de la empresa
+              const companyData = await getCompanyData(userData.tenantId)
+              if (isMounted) {
+                setCompany(companyData)
+              }
+            } else {
+              setUser(null)
+              setCompany(null)
+            }
+          }
+          
+          // Guardar token en cookie
+          try {
             const token = await firebaseUser.getIdToken()
-            document.cookie = `auth-token=${token}; path=/; max-age=3600; secure; samesite=strict`
-          } else {
+            if (isMounted) {
+              document.cookie = `auth-token=${token}; path=/; max-age=3600; secure; samesite=strict`
+            }
+          } catch (tokenError) {
+            console.error('Error saving token:', tokenError)
+          }
+        } else {
+          if (isMounted) {
             setUser(null)
             setCompany(null)
+            // Limpiar cookie
+            document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
           }
-        } catch (error) {
-          console.error('Error loading user data:', error)
+        }
+      } catch (error) {
+        console.error('Error in onAuthChange:', error)
+        if (isMounted) {
           setUser(null)
           setCompany(null)
         }
-      } else {
-        setUser(null)
-        setCompany(null)
-        // Limpiar cookie
-        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
       }
-      
-      setLoading(false)
     })
 
-    return () => unsubscribe()
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {

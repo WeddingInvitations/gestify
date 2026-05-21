@@ -4,6 +4,30 @@ import { useState } from 'react'
 import { useAuth } from '@/lib/auth/context'
 import { useRouter } from 'next/navigation'
 
+type FirebaseLikeError = {
+  code?: string
+  message?: string
+}
+
+const getAuthErrorMessage = (error: unknown): string => {
+  const firebaseError = error as FirebaseLikeError
+
+  if (firebaseError?.code === 'auth/unauthorized-domain') {
+    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'tu-dominio'
+    return `Dominio no autorizado en Firebase Auth. Agrega ${currentDomain} en Firebase Console -> Authentication -> Settings -> Authorized domains.`
+  }
+
+  if (firebaseError?.code === 'auth/popup-closed-by-user') {
+    return 'Se cerró la ventana de Google antes de completar el inicio de sesión.'
+  }
+
+  if (firebaseError?.code === 'auth/popup-blocked') {
+    return 'Tu navegador bloqueó la ventana emergente. Habilita popups e inténtalo de nuevo.'
+  }
+
+  return firebaseError?.message || 'Error al iniciar sesión'
+}
+
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +48,8 @@ export default function LoginPage() {
     try {
       await signIn(email, password)
       router.push('/app/dashboard')
-    } catch (error: any) {
-      setError(error.message || 'Error al iniciar sesión')
+    } catch (error: unknown) {
+      setError(getAuthErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
@@ -38,8 +62,8 @@ export default function LoginPage() {
     try {
       await signInGoogle()
       router.push('/app/dashboard')
-    } catch (error: any) {
-      setError(error.message || 'Error al iniciar sesión con Google')
+    } catch (error: unknown) {
+      setError(getAuthErrorMessage(error))
     } finally {
       setIsLoading(false)
     }

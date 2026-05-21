@@ -120,6 +120,19 @@ El Dockerfile incluye configuración de seguridad. Si hay problemas, usa `Docker
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com
 ```
 
+### Error Firebase: "auth/unauthorized-domain"
+Este error ocurre cuando el dominio desde el que abres la app no esta autorizado en Firebase Authentication.
+
+Pasos para corregirlo:
+1. Ve a Firebase Console -> Authentication -> Settings -> Authorized domains.
+2. Agrega los dominios que uses para iniciar sesion:
+   - `localhost` (desarrollo local)
+   - Tu dominio de Cloud Run (por ejemplo `tu-servicio-xxxxx-uc.a.run.app`)
+   - Cualquier dominio personalizado de frontend
+3. Guarda cambios y vuelve a intentar el login con Google.
+
+Nota: si usas varios entornos (dev/stage/prod), agrega cada dominio por separado.
+
 ### Verificar logs del despliegue
 ```bash
 gcloud run services logs tail gestify --region us-central1
